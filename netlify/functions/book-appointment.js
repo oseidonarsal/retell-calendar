@@ -7,21 +7,22 @@ exports.handler = async (event) => {
 
   const { date, time, name, email, reason } = JSON.parse(event.body);
 
-  // Create OAuth2 client
   const oauth2Client = new google.auth.OAuth2(
     process.env.GOOGLE_CLIENT_ID,
     process.env.GOOGLE_CLIENT_SECRET
   );
 
-  // Set the refresh token
   oauth2Client.setCredentials({
     refresh_token: process.env.GOOGLE_REFRESH_TOKEN
   });
 
   const calendar = google.calendar({ version: 'v3', auth: oauth2Client });
 
-  const startDateTime = new Date(`${date}T${time}:00`);
-  const endDateTime = new Date(startDateTime.getTime() + 60 * 60 * 1000);
+  // Create start and end times using the date and time directly (no Date parsing)
+  const startDateTime = `${date}T${time}:00`;
+  const endHour = (parseInt(time.split(':')[0]) + 1).toString().padStart(2, '0');
+  const endMinutes = time.split(':')[1];
+  const endDateTime = `${date}T${endHour}:${endMinutes}:00`;
 
   try {
     const eventResult = await calendar.events.insert({
@@ -30,11 +31,11 @@ exports.handler = async (event) => {
         summary: `Appointment with ${name}`,
         description: reason || 'Booked via phone',
         start: {
-          dateTime: startDateTime.toISOString(),
+          dateTime: startDateTime,
           timeZone: 'America/Chicago',
         },
         end: {
-          dateTime: endDateTime.toISOString(),
+          dateTime: endDateTime,
           timeZone: 'America/Chicago',
         },
         attendees: email ? [{ email }] : [],
