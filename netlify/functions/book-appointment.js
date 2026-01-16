@@ -7,15 +7,18 @@ exports.handler = async (event) => {
 
   const { date, time, name, email, reason } = JSON.parse(event.body);
 
-  const auth = new google.auth.GoogleAuth({
-    credentials: {
-      client_email: process.env.GOOGLE_CLIENT_EMAIL,
-      private_key: process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'),
-    },
-    scopes: ['https://www.googleapis.com/auth/calendar'],
+  // Create OAuth2 client
+  const oauth2Client = new google.auth.OAuth2(
+    process.env.GOOGLE_CLIENT_ID,
+    process.env.GOOGLE_CLIENT_SECRET
+  );
+
+  // Set the refresh token
+  oauth2Client.setCredentials({
+    refresh_token: process.env.GOOGLE_REFRESH_TOKEN
   });
 
-  const calendar = google.calendar({ version: 'v3', auth });
+  const calendar = google.calendar({ version: 'v3', auth: oauth2Client });
 
   const startDateTime = new Date(`${date}T${time}:00`);
   const endDateTime = new Date(startDateTime.getTime() + 60 * 60 * 1000);
